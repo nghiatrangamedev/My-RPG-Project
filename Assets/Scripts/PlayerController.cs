@@ -10,6 +10,8 @@ public class PlayerController : MonoBehaviour
     float _movementRange = 100f;
     [SerializeField] LayerMask _movementMask;
 
+    Interactable _focus;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -27,11 +29,60 @@ public class PlayerController : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, _movementRange, _movementMask))
             {
-                Debug.Log("Move to " + hit.collider.name);
+                if (_focus != null)
+                {
+                    RemoveFocus();
+                }
 
                 Vector3 newPosition = hit.point;
                 _playerMovement.MoveToPosition(newPosition);
             }
         }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+            Interactable interactable;
+
+            if (Physics.Raycast(ray, out hit, _movementRange))
+            {
+                interactable = hit.collider.GetComponent<Interactable>();
+
+                if (interactable != null)
+                {
+                    SetFocus(interactable);
+                }
+            }
+        }
     }
+
+    void SetFocus(Interactable newFocus)
+    {
+        if (_focus != newFocus)
+        {
+            if (_focus != null)
+            {
+                _focus.OnDefocused();
+            }
+
+            _focus = newFocus;
+            _playerMovement.FollowTarget(_focus);
+        }
+
+        _focus.OnFocused(transform);
+
+    }
+
+    void RemoveFocus()
+    {
+        if (_focus != null)
+        {
+            _focus.OnDefocused();
+        }
+        
+        _focus = null;
+        _playerMovement.StopFollowingTarget();
+    }
+
 }
